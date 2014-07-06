@@ -1,9 +1,12 @@
 var dado  = {
-  percentual: '70' ,
+  percentual: 70 ,
   pl: 'PLM 12345',
   tema: 'Saude'
 };
+var conta_envios = 0 ;
+
 var express = require('express') ;
+var moment = require("moment") ;
 var app = express() ;
 
 app.get('/', function(req , res) {
@@ -13,6 +16,12 @@ app.get('/', function(req , res) {
 
 app.get('/dado/1', function(req , res) {
   res.json(dado) ;
+  conta_envios += 1 ;
+  console.log("------------------------") ;
+  console.log("Dado enviado") ;
+  console.log("Envios: " + conta_envios) ;
+  now = moment(new Date()) ;
+  console.log( now.format("DD/MM/YYYY HH:mm") ) ;
 }) ;
 
 app.listen(process.env.PORT || 4567 ) ;
