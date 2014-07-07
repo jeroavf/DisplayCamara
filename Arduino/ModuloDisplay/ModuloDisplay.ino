@@ -4,7 +4,8 @@
   e display lcd de 2 linhas por 16 caracteres
   Arduino - Brasilia 
   Autor : Jeronimo Avelar Filho
-  Versao 0.1
+  Este codigo e' baseado em exemplo existente em https://bitbucket.org/victoraldir/ajson-aviseja/src
+  
 */
 #include <SPI.h>
 #include <Ethernet.h>
@@ -24,6 +25,12 @@ String jsonStringCurr = "";
 const int port = 4567;
 EthernetClient client;
 IPAddress ipArduino ;
+
+// valores recebidos do servidor
+int percentual_int  ;
+String pl_string   ;
+String tema_string ;
+
 
 void setup() {
   Serial.begin(9600);
@@ -47,85 +54,93 @@ void setup() {
 
 void loop()
 {
-  Serial.println("Aguarde 2 segs");
-  delay(2000);
+  Serial.println("Aguarde 5 segs");
+  delay(5000);
 
   //Consulta a URL / do servidor e recebe uma String com notacao JSON
-  jsonString = requestServer();
-
-  if(!jsonString.equals("")){
-    if(!jsonString.equals(jsonStringCurr)){
-
-      //Atualiza a variavel que armazena o JSON atual
-      jsonStringCurr = jsonString;
-
-      char jsonChar[jsonString.length()];
-      jsonString.toCharArray(jsonChar, jsonString.length() + 1);
-      parseJson(jsonChar);
-      jsonString = "";
-    }
-  }
+  getMessageFromServer() ;
+  displayMessage() ;
+  moveServo() ;
 }
 
-String requestServer(){
-
-  Serial.println("Conectando server node...");
-
-  // Iniciando conexao com o servidor 
-  if (client.connect(server, port)) {
-    Serial.println("Conectado");
-    // GET no PATH / do servidor
-    client.println("GET /dado/1 HTTP/1.1");
-    client.println("HOST: 192.168.25.5");
-    client.println();
+void getMessageFromServer() {
+  //tenta conectar ao servidor
+  int ret = client.connect(server, port) ;
+  
+  //Serial.println(ret,DEC)  ;
+  //verifica o retorno se nao conectou encerra
+  //if( !client.connect(server, port)) {
+  if( ret != 1) {
+    Serial.print("Erro de conexao: ") ;
+    Serial.println(ret,DEC)  ;
+    return ;
+  }
+  
+  Serial.println("Conectado...") ;
+  // faz requisicao ao servidor
+  client.println("GET /dado/1 HTTP/1.1");
+  client.println("HOST: 192.168.25.5");
+  client.println();
 
     //Aguardando conexao
-    while(!client.available()){
-      delay(1);
+  while(!client.available()){
+    delay(1);
+  }  
+  // limpa a string json 
+  jsonString ="" ;
+  
+  //verifica se tem caracter de resposta
+  int startJson = false ;
+  
+  while( client.available()) {
+    char c = client.read() ;
+    if(startJson == true) {
+      jsonString += c ;
+      if(c == '}' ) {
+        startJson = false ;
+      }  
+        
+    } else {
+      if(c == '{' ) {
+        startJson = true ;
+        jsonString += c ;
+      }  
+      
     }
 
-    //Percorre os caracteres do envelope HTTP do servidor e armazena na String apenas o conteudo JSON
-    while (client.available()) {
-      char c = client.read();
-      if( c == '{' ) { 
-        startRead = true; 
-        //Serial.print(c) ;
-      }
-      if ( startRead ) { 
-        jsonString += c; 
-      }
-    }
-
-    //Reseta a flag de leitura de conteudo JSON
-    startRead = false;
-
-  } 
-  else {
-    // Caso nao ocorra conexao
-    Serial.println("Conexao falhou");
   }
-
-  //Aguarda a desconexao com o servidor
+  
+  //Serial.println(jsonString) ;
+  char jsonChar[jsonString.length()];
+  jsonString.toCharArray(jsonChar, jsonString.length() + 1);
+  parseJson(jsonChar);  
+  
   while(client.connected()){
     delay(1);
   }
-
-  // Finaliza o socket de conexao
-  if (!client.connected()) {
-    Serial.println();
-    Serial.println("Desconectando...");
-    client.stop();
-
+  
+  // encerra o cliente se encerrou a conexao
+  if(!client.connected()) {
+    client.stop() ;
+    Serial.println("Disconectado" ) ;
   }
 
-  return jsonString;
+}
+
+void displayMessage() {
+  Serial.println(percentual_int);
+  Serial.println(pl_string );
+  Serial.println(tema_string );
+}
+
+void moveServo() {
 
 }
 
 void parseJson(char *jsonString) 
 {
   //Inicializa o objeto Pai
-  Serial.println("Iniciando parsing ...")  ;
+  //Serial.println("Iniciando parsing ...")  ;
   
   aJsonObject* root = aJson.parse(jsonString);
 
@@ -139,21 +154,17 @@ void parseJson(char *jsonString)
     //Caputura o objeto totalSolicitacoes
     aJsonObject* tema = aJson.getObjectItem(root, "tema");
 
-    int percentual_int = percentual->valueint;
-    String pl_string =  pl->valuestring ;
-    String tema_string  =  tema->valuestring ;
+    percentual_int = percentual->valueint;
+    pl_string =  pl->valuestring ;
+    tema_string  =  tema->valuestring ;
 
-
-    Serial.println(percentual_int);
-    Serial.println(pl_string );
-    Serial.println(tema_string );
 
 
   }
 
   //Deleta o objeto apos a utilizacao para liberacao de memoria
   aJson.deleteItem(root);
-  Serial.println("Fim parsing ...")  ;
+  //Serial.println("Fim parsing ...")  ;
 
 }
 
