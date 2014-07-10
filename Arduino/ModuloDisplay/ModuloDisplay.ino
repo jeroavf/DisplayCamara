@@ -6,6 +6,15 @@
   Autor : Jeronimo Avelar Filho
   Este codigo e' baseado em exemplo existente em https://bitbucket.org/victoraldir/ajson-aviseja/src
   
+  Observacoes: 
+  O shield ethernet utiliza os pinos do arduino abaixo:
+  D2 - Connects the INT pin of the W5100
+  D3 - Contral the reset of the W5100
+  D10 - Used for SPI Chip Select
+  D11 - Used for SPI MOSI
+  D12 - Used for SPI MISO
+  D13 - Used for SPI SCK
+  
 */
 #include <SPI.h>
 #include <Ethernet.h>
