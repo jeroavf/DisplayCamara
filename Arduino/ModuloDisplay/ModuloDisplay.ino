@@ -1,3 +1,4 @@
+
 /*
   ModuloDisplay - 05/07/2014
   Prototipo de display com exibicao de informacao por um servo-motor simulando um display analogico
@@ -19,6 +20,8 @@
 #include <SPI.h>
 #include <Ethernet.h>
 #include <aJSON.h>
+#include <Servo.h>
+#include <LiquidCrystal.h>
 
 // MAC definition 
 byte mac[] = {  
@@ -26,7 +29,7 @@ byte mac[] = {
 
 //char server[] = "192.168.25.4"; 
 byte server[] = { 
-  192, 168, 25, 5 };
+  192, 168, 25, 3 };
 boolean startRead = false;
 String jsonString = "";
 String jsonStringCurr = "";
@@ -40,11 +43,29 @@ int percentual_int  ;
 String pl_string   ;
 String tema_string ;
 
+// Variaveis LCD
+//LiquidCrystal(rs, enable, d4, d5, d6, d7)  ; // rw do lcd ligado ao gnd
+LiquidCrystal lcd(A0, A1,A2,A3,A4,A5 );
+
+// Variaveis Servo
+Servo servo;
 
 void setup() {
+  // Inicializa a Serial
   Serial.begin(9600);
   Serial.println("Iniciando ...") ;
-
+  
+   
+  //Inicializa LCD
+   lcd.begin(16, 2);
+   lcd.setCursor(0,0) ;
+   lcd.print("Iniciando") ;    
+  
+  //Inicializa Servo 
+  servo.attach(4) ;
+  
+  
+  
   // Iniciando a conexao ethernet e recebendo o IP dinamicamente
   if (Ethernet.begin(mac) == 0) {
     Serial.println("Erro na rede");
@@ -60,6 +81,11 @@ void setup() {
   }  
 
 }
+
+void initEthernet() {
+
+}
+
 
 void loop()
 {
@@ -88,7 +114,7 @@ void getMessageFromServer() {
   Serial.println("Conectado...") ;
   // faz requisicao ao servidor
   client.println("GET /dado/1 HTTP/1.1");
-  client.println("HOST: 192.168.25.5");
+  client.println("HOST: 192.168.25.3");
   client.println();
 
     //Aguardando conexao
@@ -138,12 +164,18 @@ void getMessageFromServer() {
 
 void displayMessage() {
   Serial.println(percentual_int);
+
+  lcd.setCursor(0,0) ;
+  lcd.print(pl_string) ; 
   Serial.println(pl_string );
+
+  lcd.setCursor(0,1) ;
+  lcd.print(tema_string) ; 
   Serial.println(tema_string );
 }
 
 void moveServo() {
-
+  servo.write(percentual_int) ;
 }
 
 void parseJson(char *jsonString) 
