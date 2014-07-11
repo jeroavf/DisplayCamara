@@ -78,6 +78,10 @@ void setup() {
     ipArduino = Ethernet.localIP() ;
     Serial.print("IP obtido por DHCP:") ;
     Serial.println(ipArduino) ;
+    lcd.setCursor(0,0) ;
+    lcd.print("IP por DHCP") ;    
+    lcd.setCursor(0,1) ;
+    lcd.print(ipArduino) ;    
   }  
 
 }
@@ -163,6 +167,7 @@ void getMessageFromServer() {
 }
 
 void displayMessage() {
+  lcd.clear() ;
   Serial.println(percentual_int);
 
   lcd.setCursor(0,0) ;
