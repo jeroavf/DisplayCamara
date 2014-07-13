@@ -15,9 +15,11 @@ app.get('/', function(req , res) {
 }) ;
 
 app.get('/dado/1', function(req , res) {
+  dado.percentual = Math.floor( Math.random() * 180 ) ;
   res.json(dado) ;
   conta_envios += 1 ;
   console.log("------------------------") ;
+  console.log("Valor enviado: " + dado.percentual) ;
   console.log("Dado enviado") ;
   console.log("Envios: " + conta_envios) ;
   now = moment(new Date()) ;
