@@ -39,9 +39,13 @@ EthernetClient client;
 IPAddress ipArduino ;
 
 // valores recebidos do servidor
-int percentual_int  ;
-String pl_string   ;
-String tema_string ;
+//int percentual_int  ;
+//String pl_string   ;
+//String tema_string ;
+
+int contador_int  ;
+String temas_string   ;
+String nomeProposicao_string ;
 
 // Variaveis LCD
 //LiquidCrystal(rs, enable, d4, d5, d6, d7)  ; // rw do lcd ligado ao gnd
@@ -93,8 +97,8 @@ void loop()
 
   //Consulta a URL / do servidor e recebe uma String com notacao JSON
   getMessageFromServer() ;
-  displayMessage() ;
-  moveServo() ;
+  //displayMessage() ;
+ // moveServo() ;
 }
 
 void getMessageFromServer() {
@@ -112,7 +116,7 @@ void getMessageFromServer() {
 
   Serial.println("Conectado...") ;
   // faz requisicao ao servidor
-  client.println("GET /dado/1 HTTP/1.1");
+  client.println("GET /dado2/1 HTTP/1.1");
   client.println("HOST: 192.168.25.3");
   client.println();
 
@@ -131,12 +135,14 @@ void getMessageFromServer() {
     if(startJson == true) {
       jsonString += c ;
       if(c == '}' ) {
+        Serial.println("}") ;
         startJson = false ;
       }  
 
     } 
     else {
       if(c == '{' ) {
+        Serial.println("{" );
         startJson = true ;
         jsonString += c ;
       }  
@@ -145,11 +151,12 @@ void getMessageFromServer() {
 
   }
 
-  //Serial.println(jsonString) ;
+  Serial.println(jsonString) ;
   char jsonChar[jsonString.length()];
   jsonString.toCharArray(jsonChar, jsonString.length() + 1);
   parseJson(jsonChar);  
-
+  displayMessage() ;
+  
   while(client.connected()){
     delay(1);
   }
@@ -157,26 +164,28 @@ void getMessageFromServer() {
   // encerra o cliente se encerrou a conexao
   if(!client.connected()) {
     client.stop() ;
-    Serial.println("Disconectado" ) ;
+    Serial.println("Desconectado" ) ;
   }
 
 }
 
 void displayMessage() {
-  lcd.clear() ;
-  Serial.println(percentual_int);
+  Serial.println("DEBUG:") ;
+  Serial.println(contador_int);
+  Serial.println(nomeProposicao_string );
+  Serial.println(temas_string );
 
+  /*lcd.clear() ;
   lcd.setCursor(0,0) ;
-  lcd.print(pl_string) ; 
-  Serial.println(pl_string );
+  lcd.print(nomeProposicao_string) ; 
 
   lcd.setCursor(0,1) ;
-  lcd.print(tema_string) ; 
-  Serial.println(tema_string );
+  lcd.print(temas_string) ; 
+  */
 }
 
 void moveServo() {
-  servo.write(percentual_int) ;
+   servo.write(contador_int) ;
 }
 
 void parseJson(char *jsonString) 
@@ -187,19 +196,25 @@ void parseJson(char *jsonString)
   aJsonObject* root = aJson.parse(jsonString);
 
   if (root != NULL) {
-    //Caputura o objeto percentual
-    aJsonObject* percentual = aJson.getObjectItem(root, "percentual"); 
+    //Caputura o objeto contador
+    //aJsonObject* percentual = aJson.getObjectItem(root, "percentual"); 
+    aJsonObject* contador = aJson.getObjectItem(root, "contador"); 
 
-    //Caputura o objeto pl
-    aJsonObject* pl = aJson.getObjectItem(root, "pl");
+    //Caputura o objeto temas
+    //aJsonObject* pl = aJson.getObjectItem(root, "pl");
+    aJsonObject* temas = aJson.getObjectItem(root, "temas");
 
     //Caputura o objeto totalSolicitacoes
-    aJsonObject* tema = aJson.getObjectItem(root, "tema");
+    //aJsonObject* tema = aJson.getObjectItem(root, "tema");
+    aJsonObject* nomeProposicao = aJson.getObjectItem(root, "nomeProposicao");
 
-    percentual_int = percentual->valueint;
+/*    percentual_int = percentual->valueint;
     pl_string =  pl->valuestring ;
     tema_string  =  tema->valuestring ;
-
+*/
+    contador_int = contador->valueint;
+    temas_string =  temas->valuestring ;
+    nomeProposicao_string  =  nomeProposicao->valuestring ;
 
 
   }
