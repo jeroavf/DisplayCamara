@@ -15,9 +15,15 @@ var dado3 =
 {
   "nomeProposicao":"PL 6613/2009",
   "temas": "Administracao Publica" ,
-  "contador":4134
+  "contador":0.05
 }
 
+var dado4 = 
+{
+  "nomeProposicao":"PL 6613/2009",
+  "temas": "Economia, Administracao Financeira" ,
+  "contador":0.0512121425
+}
 var conta_envios = 0 ;
 
 var express = require('express') ;
@@ -43,7 +49,7 @@ app.get('/dado/1', function(req , res) {
 
 app.get('/dado2/1', function(req , res) {
   dado.percentual = Math.floor( Math.random() * 180 ) ;
-  res.json(dado3) ;
+  res.json(dado4) ;
   conta_envios += 1 ;
   console.log("get dado2/1 ------------------------") ;
   console.log("Valor enviado: " + dado.percentual) ;

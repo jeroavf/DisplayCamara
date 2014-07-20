@@ -1,4 +1,3 @@
-
 /*
   ModuloDisplay - 05/07/2014
  Prototipo de display com exibicao de informacao por um servo-motor simulando um display analogico
@@ -19,9 +18,11 @@
  */
 #include <SPI.h>
 #include <Ethernet.h>
-#include <aJSON.h>
+#include <JsonParser.h>
 #include <Servo.h>
 #include <LiquidCrystal.h>
+
+using namespace ArduinoJson::Parser;
 
 // MAC definition 
 byte mac[] = {  
@@ -33,19 +34,21 @@ byte server[] = {
 boolean startRead = false;
 String jsonString = "";
 String jsonStringCurr = "";
+
+// Variaveis para a biblioteca JsonParser
+JsonParser<16> parser ;
+
 //server port
-const int port = 4567;
+char serverUrl[] = "cddashboard.herokuapp.com" ;
+//const int port = 4567;
+const int port = 80;
 EthernetClient client;
 IPAddress ipArduino ;
 
 // valores recebidos do servidor
-//int percentual_int  ;
-//String pl_string   ;
-//String tema_string ;
-
-int contador_int  ;
-String temas_string   ;
-String nomeProposicao_string ;
+double contador_double ;
+char*  temas_string   ;
+char*  nomeProposicao_string ;
 
 // Variaveis LCD
 //LiquidCrystal(rs, enable, d4, d5, d6, d7)  ; // rw do lcd ligado ao gnd
@@ -60,6 +63,7 @@ void setup() {
   Serial.println("Iniciando ...") ;
 
 
+
   //Inicializa LCD
   lcd.begin(16, 2);
   lcd.setCursor(0,0) ;
@@ -68,15 +72,13 @@ void setup() {
   //Inicializa Servo 
   servo.attach(4) ;
 
-
-
   // Iniciando a conexao ethernet e recebendo o IP dinamicamente
   while (Ethernet.begin(mac) == 0) {
     Serial.println("Erro na rede");
     Serial.println("Retry em 5 segs");
     // Problemas na conexao ethernet, verifique a sua rede
     delay(5000);
- 
+
   } 
 
   ipArduino = Ethernet.localIP() ;
@@ -97,17 +99,14 @@ void loop()
 
   //Consulta a URL / do servidor e recebe uma String com notacao JSON
   getMessageFromServer() ;
-  //displayMessage() ;
- // moveServo() ;
+  // moveServo() ;
 }
 
 void getMessageFromServer() {
   //tenta conectar ao servidor
-  int ret = client.connect(server, port) ;
+  //int ret = client.connect(server, port) ;
+  int ret = client.connect(serverUrl, port) ;
 
-  //Serial.println(ret,DEC)  ;
-  //verifica o retorno se nao conectou encerra
-  //if( !client.connect(server, port)) {
   if( ret != 1) {
     Serial.print("Erro de conexao: ") ;
     Serial.println(ret,DEC)  ;
@@ -116,20 +115,24 @@ void getMessageFromServer() {
 
   Serial.println("Conectado...") ;
   // faz requisicao ao servidor
-  client.println("GET /dado2/1 HTTP/1.1");
-  client.println("HOST: 192.168.25.3");
+  //client.println("GET /dado2/1 HTTP/1.1");
+  //client.println("HOST: localhost");
+
+  client.println("GET /api/pl_visitas/0 HTTP/1.1");
+  client.println("HOST: cddashboard.herokuapp.com");
+  
   client.println();
 
   //Aguardando conexao
   while(!client.available()){
     delay(1);
   }  
-  // limpa a string json 
-  jsonString ="" ;
 
   //verifica se tem caracter de resposta
   int startJson = false ;
-
+  // limpa a string json
+  jsonString = "";
+  
   while( client.available()) {
     char c = client.read() ;
     if(startJson == true) {
@@ -154,9 +157,10 @@ void getMessageFromServer() {
   Serial.println(jsonString) ;
   char jsonChar[jsonString.length()];
   jsonString.toCharArray(jsonChar, jsonString.length() + 1);
-  parseJson(jsonChar);  
+  parseMessageJson(jsonChar)  ;
+
   displayMessage() ;
-  
+
   while(client.connected()){
     delay(1);
   }
@@ -169,62 +173,40 @@ void getMessageFromServer() {
 
 }
 
+void parseMessageJson(char *jsonString) {
+
+  JsonHashTable root = parser.parseHashTable(jsonString);
+  if(!root.success())
+  { 
+    Serial.println("Falha no parsing JsonParser") ;  
+    return ;
+  } 
+  contador_double  = root.getDouble("contador") ;
+  temas_string = root.getString("temas") ;
+  nomeProposicao_string = root.getString("nomeProposicao") ;
+
+}  
+
+
 void displayMessage() {
   Serial.println("DEBUG:") ;
-  Serial.println(contador_int);
+  Serial.println(contador_double);
   Serial.println(nomeProposicao_string );
   Serial.println(temas_string );
 
-  /*lcd.clear() ;
+  lcd.clear() ;
   lcd.setCursor(0,0) ;
   lcd.print(nomeProposicao_string) ; 
 
   lcd.setCursor(0,1) ;
   lcd.print(temas_string) ; 
-  */
+
 }
 
 void moveServo() {
-   servo.write(contador_int) ;
+  int angulo = (int) contador_double * 180 ;
+  servo.write(angulo) ;
 }
-
-void parseJson(char *jsonString) 
-{
-  //Inicializa o objeto Pai
-  //Serial.println("Iniciando parsing ...")  ;
-
-  aJsonObject* root = aJson.parse(jsonString);
-
-  if (root != NULL) {
-    //Caputura o objeto contador
-    //aJsonObject* percentual = aJson.getObjectItem(root, "percentual"); 
-    aJsonObject* contador = aJson.getObjectItem(root, "contador"); 
-
-    //Caputura o objeto temas
-    //aJsonObject* pl = aJson.getObjectItem(root, "pl");
-    aJsonObject* temas = aJson.getObjectItem(root, "temas");
-
-    //Caputura o objeto totalSolicitacoes
-    //aJsonObject* tema = aJson.getObjectItem(root, "tema");
-    aJsonObject* nomeProposicao = aJson.getObjectItem(root, "nomeProposicao");
-
-/*    percentual_int = percentual->valueint;
-    pl_string =  pl->valuestring ;
-    tema_string  =  tema->valuestring ;
-*/
-    contador_int = contador->valueint;
-    temas_string =  temas->valuestring ;
-    nomeProposicao_string  =  nomeProposicao->valuestring ;
-
-
-  }
-
-  //Deleta o objeto apos a utilizacao para liberacao de memoria
-  aJson.deleteItem(root);
-  //Serial.println("Fim parsing ...")  ;
-
-}
-
 
 
 
