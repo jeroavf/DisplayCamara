@@ -1,0 +1,13 @@
+todo - 16/07/2014
+Colocar percentual dos acessos 
+Proposicoes mais acessadas 
+tirar a chave 
+colocar minuscula 
+Rodar o texto no lcd 
+periodo de onservacao dos valores 
+
+18/07/2014 
+Aparentemente a biblioteca ajson nao consegue realizar parsing de float 
+testar outras bibliotecas :
+https://github.com/bblanchon/ArduinoJson
+baseado em http://zserge.com/jsmn.html
